@@ -141,75 +141,70 @@ const bulkUploadJson = async (req, res) => {
 
     const processedResults = [];
 
-    // Get all departments for mapping names to IDs
-    const departments = await prisma.department.findMany();
-    const deptMap = {};
-    departments.forEach(d => deptMap[d.name.toLowerCase()] = d.id);
-
-    // Fetch existing emails and codes to prevent duplicate checks efficiently
     const existingEmployees = await prisma.employee.findMany();
-    const existingEmails = new Set(existingEmployees.map(e => e.email.toLowerCase()));
-    const existingCodes = new Set(existingEmployees.map(e => e.employeeCode.toLowerCase()));
+    const existingEmails = new Set(
+      existingEmployees.filter(e => e.email).map(e => e.email.toLowerCase())
+    );
+    const existingCodes = new Set(
+      existingEmployees.map(e => e.employeeCode.toLowerCase())
+    );
 
     for (let i = 0; i < results.length; i++) {
       const row = results[i];
       try {
-        // Map team or department name to ID, auto-create if missing
-        let teamName = row.team || row.department;
-        if (!teamName || String(teamName).trim() === '') {
-          teamName = 'Unassigned';
+        // Enforce strict category for team
+        let teamRaw = row.team || row.department;
+        if (!teamRaw || String(teamRaw).trim() === '') {
+          teamRaw = 'OTHER';
         }
-        teamName = String(teamName).trim();
         
-        let deptId = deptMap[teamName.toLowerCase()];
-        
-        if (!deptId) {
-          // Auto-create missing department
-          const newDept = await prisma.department.create({
-            data: { name: teamName.toUpperCase() }
-          });
-          deptId = newDept.id;
-          deptMap[teamName.toLowerCase()] = deptId;
+        // Clean and uppercase team mapping to enum values realistically
+        let team = String(teamRaw).trim().toUpperCase().replace(/[\s\-_]+/g, '_');
+        const allowedTeams = ['ENGINEERING', 'HR', 'MARKETING', 'SALES', 'FINANCE', 'OPERATIONS', 'DESIGN', 'SUPPORT', 'OTHER', 'PRODUCT', 'SPECIFIC', 'SOLID', 'SOPS', 'STUDENT_RELATED_BUS'];
+        if (!allowedTeams.includes(team)) {
+          team = 'OTHER';
         }
 
-        // Generate fallbacks for strictly required unique fields if completely missing
-        const fallbackCode = `EMP-${Date.now()}-${i}`;
-        const fallbackEmail = `employee${Date.now()}${i}@hrms.com`;
+        const rawCode = String(row.employeeCode || row['Emp No.'] || '').trim();
+        const rawEmail = String(row.email || '').trim();
         
-        const rawCode = String(row.employeeCode || fallbackCode).trim();
-        const rawEmail = String(row.email || fallbackEmail).trim();
-        
-        const email = rawEmail.toLowerCase();
+        if (!rawCode) {
+          throw new Error('Employee code is strictly required');
+        }
+
+        const email = rawEmail ? rawEmail.toLowerCase() : null;
         const code = rawCode.toLowerCase();
 
-        if (existingEmails.has(email) || existingCodes.has(code)) {
+        if ((email && existingEmails.has(email)) || existingCodes.has(code)) {
           duplicatesSkipped++;
           // Skip the rest of the logic for duplicates without treating it as validation failure
           continue;
         }
 
-        // Normalize employmentType to match DB enums ('FULL_TIME' | 'INTERN')
+        // Normalize employmentType to match DB enums
         let empTypeRaw = row.employmentType || row['Type of Employment'] || 'FULL_TIME';
-        empTypeRaw = String(empTypeRaw).toUpperCase().replace('-', '_').replace(' ', '_');
-        if (!['FULL_TIME', 'INTERN'].includes(empTypeRaw)) {
-          empTypeRaw = 'FULL_TIME'; // Fallback
+        empTypeRaw = String(empTypeRaw).toUpperCase().replace(/[\s\-_]+/g, '_');
+        const allowedTypes = ['FULL_TIME', 'INTERN', 'CONTRACT', 'TEMPORARY', 'CONSULTANT'];
+        if (!allowedTypes.includes(empTypeRaw)) {
+          empTypeRaw = 'FULL_TIME'; 
         }
 
-        // Ensure date is valid, fallback to today
-        let parsedDate = new Date(row.dateOfJoining);
+        let parsedDate = new Date(row.dateOfJoining || row['DOJ']);
         if (isNaN(parsedDate.getTime())) {
           parsedDate = new Date();
         }
 
+        const fallbackPhone = String(row.phoneNumber || row['Contact Num'] || '');
+
         const mapping = {
           ...row,
-          fullName: row.fullName || 'Unknown Employee',
-          role: row.role || 'Employee',
-          phoneNumber: String(row.phoneNumber || '0000000000').padStart(10, '0'),
+          fullName: row.fullName || row['Name'] || 'Unknown Employee',
+          role: row.role || row['Role'] || 'Employee',
+          phoneNumber: fallbackPhone || undefined,
           employeeCode: rawCode,
-          email: rawEmail,
+          email: rawEmail || undefined,
           employmentType: empTypeRaw,
-          departmentId: deptId,
+          team: team,
           dateOfJoining: parsedDate
         };
 
@@ -222,8 +217,8 @@ const bulkUploadJson = async (req, res) => {
         successCount++;
         
         // Temporarily add to Set for current batch to prevent duplicates inside the batch itself
-        existingEmails.add(email);
-        existingCodes.add(code);
+        if (validatedData.email) existingEmails.add(validatedData.email.toLowerCase());
+        existingCodes.add(validatedData.employeeCode.toLowerCase());
       } catch (error) {
         let msg = error.message || 'Validation failed';
         if (error.errors && Array.isArray(error.errors)) {

@@ -18,18 +18,19 @@ const getStats = async (req, res) => {
       prisma.employee.count({ where: { isDeleted: false } }), // Using same as total for now since active status isn't separated
       prisma.employee.count({ where: { isDeleted: false, employmentType: 'FULL_TIME' } }),
       prisma.employee.count({ where: { isDeleted: false, employmentType: 'INTERN' } }),
-      prisma.department.findMany({
-        include: {
-          _count: {
-            select: { employees: { where: { isDeleted: false } } }
-          }
+      prisma.employee.groupBy({
+        by: ['team'],
+        _count: {
+          id: true,
+        },
+        where: {
+          isDeleted: false
         }
       }),
       prisma.employee.findMany({
         where: { isDeleted: false },
         orderBy: { createdAt: 'desc' },
-        take: 5,
-        include: { department: true }
+        take: 5
       }),
       prisma.employee.count({
         where: { isDeleted: false, createdAt: { gte: startOfMonth } }
@@ -43,8 +44,8 @@ const getStats = async (req, res) => {
       internCount,
       newThisMonth,
       departmentStats: departmentStats.map(d => ({
-        name: d.name,
-        count: d._count.employees
+        name: d.team,
+        count: d._count.id
       })),
       recentJoins
     });
@@ -66,13 +67,4 @@ const getAuditLogs = async (req, res) => {
   }
 };
 
-const getDepartments = async (req, res) => {
-  try {
-    const depts = await prisma.department.findMany();
-    res.json(depts);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-module.exports = { getStats, getAuditLogs, getDepartments };
+module.exports = { getStats, getAuditLogs };

@@ -6,7 +6,7 @@ const getAllEmployees = async (req, res) => {
     search, 
     role, 
     type, 
-    departmentId, 
+    team, 
     sortBy = 'createdAt', 
     order = 'desc',
     page = 1,
@@ -28,7 +28,7 @@ const getAllEmployees = async (req, res) => {
       } : {},
       role ? { role } : {},
       type ? { employmentType: type } : {},
-      departmentId ? { departmentId } : {},
+      team ? { team } : {},
     ]
   };
 
@@ -36,7 +36,6 @@ const getAllEmployees = async (req, res) => {
     const [employees, total] = await Promise.all([
       prisma.employee.findMany({
         where,
-        include: { department: true },
         orderBy: { [sortBy]: order },
         skip,
         take,
@@ -61,8 +60,7 @@ const getAllEmployees = async (req, res) => {
 const getEmployeeById = async (req, res) => {
   try {
     const employee = await prisma.employee.findUnique({
-      where: { id: req.params.id },
-      include: { department: true }
+      where: { id: req.params.id }
     });
 
     if (!employee) {
@@ -88,9 +86,9 @@ const createEmployee = async (req, res) => {
     const employee = await prisma.employee.create({
       data: {
         ...validatedData,
+        email: validatedData.email || null, // handle missing email nicely
         dateOfJoining: new Date(validatedData.dateOfJoining)
-      },
-      include: { department: true }
+      }
     });
 
     // Audit Log
@@ -135,9 +133,9 @@ const updateEmployee = async (req, res) => {
       where: { id: req.params.id },
       data: {
         ...validatedData,
+        email: validatedData.email || null,
         dateOfJoining: new Date(validatedData.dateOfJoining)
-      },
-      include: { department: true }
+      }
     });
 
     // Audit Log
@@ -190,8 +188,7 @@ const deleteEmployee = async (req, res) => {
 const getDeletedEmployees = async (req, res) => {
   try {
     const employees = await prisma.employee.findMany({
-      where: { isDeleted: true },
-      include: { department: true }
+      where: { isDeleted: true }
     });
     res.json(employees);
   } catch (error) {
