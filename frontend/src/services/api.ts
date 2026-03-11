@@ -36,7 +36,6 @@ export const employeeService = {
 export const dashboardService = {
   getStats: () => api.get('/stats'),
   getAuditLogs: () => api.get('/audit-logs'),
-  getDepartments: () => api.get('/departments'),
 };
 
 export const uploadService = {
@@ -46,4 +45,9 @@ export const uploadService = {
   bulkUploadJson: (payload: { employees: any[], fileName: string }) => api.post('/upload/json', payload),
   getLogs: () => api.get('/upload/logs'),
   downloadTemplate: () => api.get('/upload/template', { responseType: 'blob' }),
+};
+
+export const adminService = {
+  getProfile: () => api.get('/admin/me'),
+  updateProfile: (data: any) => api.put('/admin/me', data),
 };

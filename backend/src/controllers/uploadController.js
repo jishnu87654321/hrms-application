@@ -23,40 +23,28 @@ const bulkUploadEmployees = async (req, res) => {
     .on('end', async () => {
       const processedResults = [];
 
-      // Get all departments for mapping names to IDs
-      const departments = await prisma.department.findMany();
-      const deptMap = {};
-      departments.forEach(d => deptMap[d.name.toLowerCase()] = d.id);
-
       for (let i = 0; i < results.length; i++) {
         const row = results[i];
         try {
-          // Map team or department name to ID
-          const teamName = row.team || row.department;
-          const deptId = deptMap[teamName?.toLowerCase()];
-          if (!deptId) throw new Error(`Team "${teamName}" not found`);
+          // Normalize team mapping
+          let teamRaw = row.team || row.department;
+          if (!teamRaw) teamRaw = 'OTHER';
+          let team = String(teamRaw).trim().toUpperCase().replace(/[\s\-_]+/g, '_');
+          const allowedTeams = ['ENGINEERING', 'HR', 'MARKETING', 'SALES', 'FINANCE', 'OPERATIONS', 'DESIGN', 'SUPPORT', 'OTHER', 'PRODUCT', 'SPECIFIC', 'SOLID', 'SOPS', 'STUDENT_RELATED_BUS'];
+          if (!allowedTeams.includes(team)) team = 'OTHER';
 
-          // Map "id" or "doj" if provided in CSV with those headers
+          const rawCode = String(row.id || row.employeeCode || row['Emp No.'] || '').trim();
+          const rawEmail = String(row.email || '').trim();
+
           const mapping = {
             ...row,
-            departmentId: deptId,
-            employeeCode: row.id || row.employeeCode,
-            dateOfJoining: new Date(row.doj || row.dateOfJoining)
+            fullName: row.fullName || row['Name'] || 'Unknown Employee',
+            role: row.role || row['Role'] || 'Employee',
+            employeeCode: rawCode,
+            email: rawEmail || undefined,
+            team: team,
+            dateOfJoining: new Date(row.doj || row.dateOfJoining || new Date())
           };
-
-          // Check for duplicates in DB
-          const existing = await prisma.employee.findFirst({
-            where: {
-              OR: [
-                { email: validatedData.email },
-                { employeeCode: validatedData.employeeCode }
-              ]
-            }
-          });
-
-          if (existing) {
-            throw new Error(`Duplicate email or employee code: ${validatedData.email} / ${validatedData.employeeCode}`);
-          }
 
           // Validate and prepare row
           const validatedData = employeeSchema.parse(mapping);

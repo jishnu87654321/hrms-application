@@ -1,28 +1,22 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Plus, 
   Search, 
-  Filter, 
-  MoreVertical, 
   Edit3, 
   Trash2, 
-  Eye, 
   ChevronLeft, 
   ChevronRight,
   Download,
   AlertCircle,
-  Loader2,
-  XCircle,
-  CheckCircle2
+  Loader2
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { employeeService, dashboardService } from '../services/api';
+import { employeeService } from '../services/api';
 
 const EmployeeList: React.FC = () => {
   const [employees, setEmployees] = useState<any[]>([]);
   const [meta, setMeta] = useState<any>({ total: 0, page: 1, limit: 10, totalPages: 1 });
   const [loading, setLoading] = useState(true);
-  const [departments, setDepartments] = useState<any[]>([]);
   const navigate = useNavigate();
 
   // Filters
@@ -30,7 +24,7 @@ const EmployeeList: React.FC = () => {
     search: '',
     role: '',
     type: '',
-    departmentId: '',
+    team: '',
     page: 1,
     limit: 10
   });
@@ -48,13 +42,7 @@ const EmployeeList: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchDepts = async () => {
-      const resp = await dashboardService.getDepartments();
-      setDepartments(resp.data);
-    };
-    fetchDepts();
-  }, []);
+
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -112,13 +100,13 @@ const EmployeeList: React.FC = () => {
             />
           </div>
           <select
-            name="departmentId"
-            value={filters.departmentId}
+            name="team"
+            value={filters.team}
             onChange={handleFilterChange}
             className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all text-sm font-medium appearance-none"
           >
-            <option value="">All Departments</option>
-            {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+             <option value="">All Teams (Departments)</option>
+            {['ENGINEERING', 'HR', 'MARKETING', 'SALES', 'FINANCE', 'OPERATIONS', 'DESIGN', 'SUPPORT', 'PRODUCT', 'SPECIFIC', 'SOLID', 'SOPS', 'STUDENT_RELATED_BUS', 'OTHER'].map(d => <option key={d} value={d}>{d}</option>)}
           </select>
           <select
             name="role"
@@ -194,7 +182,7 @@ const EmployeeList: React.FC = () => {
                     </td>
                     <td className="px-6 py-5">
                       <p className="text-sm font-bold text-slate-800">{emp.employeeCode}</p>
-                      <p className="text-xs text-slate-500 font-medium">{emp.role} • {emp.department?.name}</p>
+                      <p className="text-xs text-slate-500 font-medium">{emp.role} • {emp.team || 'Unassigned'}</p>
                     </td>
                     <td className="px-6 py-5">
                       <p className="text-sm font-medium text-slate-700">{emp.email}</p>

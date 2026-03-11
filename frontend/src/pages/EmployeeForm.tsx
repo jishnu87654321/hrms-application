@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { 
-  UserPlus, 
   Save, 
   ArrowLeft, 
   Loader2, 
@@ -17,7 +16,7 @@ import {
   User as UserIcon
 } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { employeeService, dashboardService } from '../services/api';
+import { employeeService } from '../services/api';
 
 const employeeSchema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters'),
@@ -27,7 +26,7 @@ const employeeSchema = z.object({
   email: z.string().email('Invalid email address'),
   employeeCode: z.string().min(3, 'Employee code is required'),
   dateOfJoining: z.string().min(1, 'Joining date is required'),
-  departmentId: z.string().uuid('Invalid department ID'),
+  team: z.string().min(2, 'Team is required'),
 });
 
 type EmployeeForm = z.infer<typeof employeeSchema>;
@@ -38,7 +37,7 @@ const EmployeeFormPage: React.FC = () => {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [departments, setDepartments] = useState<any[]>([]);
+
   const [initialLoading, setInitialLoading] = useState(isEdit);
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<EmployeeForm>({
@@ -51,8 +50,6 @@ const EmployeeFormPage: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const deptsResp = await dashboardService.getDepartments();
-        setDepartments(deptsResp.data);
 
         if (isEdit && id) {
           const empResp = await employeeService.getById(id);
@@ -64,7 +61,7 @@ const EmployeeFormPage: React.FC = () => {
           setValue('email', emp.email);
           setValue('employeeCode', emp.employeeCode);
           setValue('dateOfJoining', new Date(emp.dateOfJoining).toISOString().split('T')[0]);
-          setValue('departmentId', emp.departmentId);
+          setValue('team', emp.team || 'OTHER');
         }
       } catch (err) {
         setError('Failed to load data.');
@@ -177,14 +174,14 @@ const EmployeeFormPage: React.FC = () => {
                 <label className="text-sm font-bold text-slate-700 ml-1">Team / Department</label>
                 <div className="relative group">
                   <Layers className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary transition-colors pointer-events-none" />
-                  <select {...register('departmentId')} className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-primary/10 transition-all font-medium text-slate-800 appearance-none">
+                  <select {...register('team')} className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-primary/10 transition-all font-medium text-slate-800 appearance-none">
                     <option value="">Select Team</option>
-                    {departments.map((d) => (
-                      <option key={d.id} value={d.id}>{d.name}</option>
+                    {['ENGINEERING', 'HR', 'MARKETING', 'SALES', 'FINANCE', 'OPERATIONS', 'DESIGN', 'SUPPORT', 'PRODUCT', 'SPECIFIC', 'SOLID', 'SOPS', 'STUDENT_RELATED_BUS', 'OTHER'].map((d) => (
+                      <option key={d} value={d}>{d}</option>
                     ))}
                   </select>
                 </div>
-                {errors.departmentId && <p className="text-xs text-red-500 font-medium ml-1">{errors.departmentId.message}</p>}
+                {errors.team && <p className="text-xs text-red-500 font-medium ml-1">{errors.team.message}</p>}
               </div>
 
               <div className="space-y-2">
@@ -198,29 +195,12 @@ const EmployeeFormPage: React.FC = () => {
 
               <div className="space-y-2">
                 <label className="text-sm font-bold text-slate-700 ml-1">Employment Type</label>
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    type="button"
-                    onClick={() => setValue('employmentType', 'FULL_TIME')}
-                    className={`py-3 rounded-2xl font-bold border-2 transition-all ${
-                      register('employmentType').value === 'FULL_TIME' || (isEdit && !register('employmentType').value) // hack for initial value
-                      ? 'border-primary bg-primary/5 text-primary shadow-sm shadow-primary/20' 
-                      : 'border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200'
-                    }`}
-                  >
-                    Full-time
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setValue('employmentType', 'INTERN')}
-                    className={`py-3 rounded-2xl font-bold border-2 transition-all ${
-                        register('employmentType').value === 'INTERN' 
-                      ? 'border-primary bg-primary/5 text-primary shadow-sm shadow-primary/20' 
-                      : 'border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200'
-                    }`}
-                  >
-                    Intern
-                  </button>
+                <div className="relative group">
+                  <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary transition-colors pointer-events-none" />
+                  <select {...register('employmentType')} className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-primary/10 transition-all font-medium text-slate-800 appearance-none">
+                    <option value="FULL_TIME">Full-time</option>
+                    <option value="INTERN">Intern</option>
+                  </select>
                 </div>
               </div>
 

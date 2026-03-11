@@ -3,8 +3,10 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { 
   Users, 
   LayoutDashboard, 
-  Upload, 
+  Upload,
   Settings,
+  History,
+  Trash2,
   Bell,
   Search,
   LogOut
@@ -19,6 +21,8 @@ const AdminLayout: React.FC = () => {
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Employees', path: '/employees', icon: Users },
     { name: 'Bulk Upload', path: '/upload', icon: Upload },
+    { name: 'Audit Logs', path: '/audit-logs', icon: History },
+    { name: 'Trash Bin', path: '/trash', icon: Trash2 },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
 
@@ -88,23 +92,23 @@ const AdminLayout: React.FC = () => {
               <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-primary rounded-full border-2 border-background"></span>
             </button>
             <div className="w-px h-8 bg-border"></div>
-            <div className="flex items-center space-x-3">
+            <Link to="/settings" className="flex items-center space-x-3 hover:opacity-80 transition-opacity group">
               <div className="text-right">
-                <p className="text-[14px] font-bold text-white">{user?.fullName || "Admin User"}</p>
+                <p className="text-[14px] font-bold text-white group-hover:text-primary transition-colors">{user?.fullName || "Admin User"}</p>
                 <p className="text-[12px] font-semibold text-muted-foreground tracking-wide font-heading uppercase">{user?.role || "Admin"}</p>
               </div>
               <div className="w-10 h-10 bg-gradient-to-tr from-primary to-indigo-400 text-white rounded-xl flex items-center justify-center font-heading font-black text-lg">
                 {(user?.fullName || "A").charAt(0)}
               </div>
-              <div className="w-px h-6 bg-border ml-2 mr-2"></div>
-              <button 
-                onClick={logout}
-                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 p-2 rounded-lg transition-colors flex items-center justify-center gap-2"
-                title="Log out"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
-            </div>
+            </Link>
+            <div className="w-px h-6 bg-border ml-2 mr-2"></div>
+            <button 
+              onClick={logout}
+              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 p-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+              title="Log out"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
           </div>
         </header>
 

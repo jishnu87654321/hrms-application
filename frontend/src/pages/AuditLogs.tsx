@@ -1,16 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { 
   History, 
-  User, 
   Activity, 
   Database, 
   Clock, 
-  Search, 
-  Filter,
-  ArrowUpRight,
-  Package,
-  ShieldCheck,
-  AlertCircle
+  ArrowUpRight
 } from 'lucide-react';
 import { dashboardService } from '../services/api';
 

@@ -9,6 +9,7 @@ import BulkUpload from './pages/BulkUpload';
 import AuditLogs from './pages/AuditLogs';
 import TrashPage from './pages/Trash';
 import AdminLayout from './layouts/AdminLayout';
+import SettingsPage from './pages/Settings';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
@@ -40,7 +41,7 @@ const App: React.FC = () => {
             <Route path="upload" element={<BulkUpload />} />
             <Route path="audit-logs" element={<AuditLogs />} />
             <Route path="trash" element={<TrashPage />} />
-            <Route path="settings" element={<div className="p-8"><h1 className="text-2xl font-bold">Settings Module</h1><p className="text-slate-500">System settings coming soon.</p></div>} />
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
 
           {/* Catch-all */}

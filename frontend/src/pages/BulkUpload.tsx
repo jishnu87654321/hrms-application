@@ -295,7 +295,7 @@ const BulkUpload: React.FC = () => {
               </li>
               <li className="flex gap-3 text-sm font-medium text-slate-400 leading-relaxed">
                 <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                "Team" maps to Department. They must exist in the system before uploading.
+                "Team" maps to internal categories (Engineering, HR, etc). Invalid ones will fallback to "Other".
               </li>
               <li className="flex gap-3 text-sm font-medium text-slate-400 leading-relaxed">
                 <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />

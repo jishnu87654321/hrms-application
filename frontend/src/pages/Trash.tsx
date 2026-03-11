@@ -4,10 +4,6 @@ import {
   RotateCcw, 
   Search, 
   AlertCircle,
-  Clock,
-  User,
-  MoreVertical,
-  CheckCircle2,
   Trash
 } from 'lucide-react';
 import { employeeService } from '../services/api';
@@ -95,7 +91,7 @@ const TrashPage: React.FC = () => {
                
                <div className="mb-6">
                   <h4 className="text-lg font-black text-slate-900 group-hover:text-primary transition-colors">{emp.fullName}</h4>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{emp.role} • {emp.department?.name}</p>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{emp.role} • {emp.team || 'Unassigned'}</p>
                </div>
 
                <div className="flex items-center gap-2 mb-6 text-red-500 bg-red-50/50 w-fit px-3 py-1 rounded-full border border-red-100">

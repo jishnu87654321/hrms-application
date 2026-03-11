@@ -22,6 +22,23 @@ enum EmploymentType {
   INTERN
 }
 
+enum TeamCategory {
+  ENGINEERING
+  HR
+  MARKETING
+  SALES
+  FINANCE
+  OPERATIONS
+  DESIGN
+  SUPPORT
+  PRODUCT
+  SPECIFIC
+  SOLID
+  SOPS
+  STUDENT_RELATED_BUS
+  OTHER
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
@@ -48,13 +65,7 @@ model AdminDetail {
   updatedAt     DateTime @updatedAt
 }
 
-model Department {
-  id        String     @id @default(uuid())
-  name      String     @unique
-  employees Employee[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-}
+
 
 model Employee {
   id             String         @id @default(uuid())
@@ -65,8 +76,7 @@ model Employee {
   email          String         @unique
   employeeCode   String         @unique
   dateOfJoining  DateTime
-  departmentId   String
-  department     Department     @relation(fields: [departmentId], references: [id])
+  team           String         @default("OTHER")
   isDeleted      Boolean        @default(false)
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt

@@ -56,6 +56,8 @@ const Dashboard: React.FC = () => {
     </div>
   );
 
+  if (!stats) return <div className="p-10 text-red-500 font-bold">Failed to load dashboard data. Check backend logs.</div>;
+
   const kpis = [
     { title: 'Total Employees', value: stats.totalEmployees, subtitle: 'in the organization', icon: Users },
     { title: 'Active', value: stats.activeEmployees, subtitle: 'currently working', icon: UserCheck },
