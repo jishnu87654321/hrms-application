@@ -3,17 +3,19 @@ const { z } = require('zod');
 const employeeSchema = z.object({
   employeeCode: z.string().trim().min(2, 'Employee code is required and must be at least 2 characters'),
   fullName: z.string().trim().min(2, 'Full name must be at least 2 characters'),
-  email: z.union([
-    z.literal(''),
-    z.string().trim().toLowerCase().email('- Invalid email format')
-  ]).optional(),
-  phoneNumber: z.union([
-    z.literal(''),
-    z.string().trim().min(10, '- Phone number must be at least 10 digits')
-  ]).optional(),
+  email: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? null : val),
+    z.string().trim().toLowerCase().email('Invalid email format').nullable()
+  ).optional(),
+  // Prisma schema has phoneNumber as non-nullable String, so we store '' if missing
+  phoneNumber: z.preprocess(
+    (val) => (val === null || val === undefined ? '' : String(val).trim()),
+    z.string()
+  ),
   role: z.string().trim().min(2, 'Role is required'),
-  employmentType: z.enum(['FULL_TIME', 'INTERN', 'CONTRACT', 'TEMPORARY', 'CONSULTANT'], {
-    errorMap: () => ({ message: 'Invalid employment type. Must be FULL_TIME, INTERN, etc.' })
+  // Prisma EmploymentType enum only has FULL_TIME and INTERN
+  employmentType: z.enum(['FULL_TIME', 'INTERN'], {
+    errorMap: () => ({ message: 'Invalid employment type. Must be FULL_TIME or INTERN.' })
   }),
   team: z.string().trim().min(2, 'Team is required').toUpperCase(),
   dateOfJoining: z.date({

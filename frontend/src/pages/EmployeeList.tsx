@@ -185,7 +185,7 @@ const EmployeeList: React.FC = () => {
                       <p className="text-xs text-slate-500 font-medium">{emp.role} • {emp.team || 'Unassigned'}</p>
                     </td>
                     <td className="px-6 py-5">
-                      <p className="text-sm font-medium text-slate-700">{emp.email}</p>
+                      <p className="text-sm font-medium text-slate-700">{emp.email || <span className="text-slate-400 italic">No email provided</span>}</p>
                       <p className="text-xs text-slate-500">{emp.phoneNumber}</p>
                     </td>
                     <td className="px-6 py-5">

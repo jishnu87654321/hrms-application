@@ -68,18 +68,18 @@ model AdminDetail {
 
 
 model Employee {
-  id             String         @id @default(uuid())
+  id             String          @id @default(uuid())
   fullName       String
   role           String
-  employmentType EmploymentType @default(FULL_TIME)
-  phoneNumber    String
-  email          String         @unique
-  employeeCode   String         @unique
-  dateOfJoining  DateTime
-  team           String         @default("OTHER")
-  isDeleted      Boolean        @default(false)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  employmentType EmploymentType  @default(FULL_TIME)
+  phoneNumber    String?                             // nullable — may be missing in bulk import
+  email          String?         @unique
+  employeeCode   String          @unique
+  dateOfJoining  DateTime?                           // nullable — may be missing in bulk import
+  team           String          @default("OTHER")
+  isDeleted      Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
   @@index([fullName])
   @@index([employeeCode])

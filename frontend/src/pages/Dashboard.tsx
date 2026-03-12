@@ -20,29 +20,39 @@ import {
 import { dashboardService } from '../services/api';
 
 const Dashboard: React.FC = () => {
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<any>({
+    totalEmployees: 0,
+    activeEmployees: 0,
+    newThisMonth: 0,
+    departmentStats: [],
+    employmentTypes: [
+      { name: "Full Time", value: 0 },
+      { name: "Intern", value: 0 }
+    ],
+    recentJoins: []
+  });
   const [loading, setLoading] = useState(true);
 
-  // Mocking detailed data since basic API structure might not have all fields required
   useEffect(() => {
     const fetchStats = async () => {
       try {
         const response = await dashboardService.getStats();
         const apiStats = response.data;
-        setStats({
-          totalEmployees: apiStats?.totalEmployees || 0,
-          activeEmployees: apiStats?.activeEmployees || 0,
-          newThisMonth: apiStats?.newThisMonth || 0,
-          departmentStats: apiStats?.departmentStats || [],
-          // Convert from API format to Donut requirement
-          employmentTypes: [
-            { name: "Full Time", value: apiStats?.fullTimeCount || 0 },
-            { name: "Intern", value: apiStats?.internCount || 0 }
-          ],
-          recentJoins: apiStats?.recentJoins || []
-        });
+        if (apiStats) {
+          setStats({
+            totalEmployees: apiStats.totalEmployees || 0,
+            activeEmployees: apiStats.activeEmployees || 0,
+            newThisMonth: apiStats.newThisMonth || 0,
+            departmentStats: apiStats.departmentStats || [],
+            employmentTypes: [
+              { name: "Full Time", value: apiStats.fullTimeCount || 0 },
+              { name: "Intern", value: apiStats.internCount || 0 }
+            ],
+            recentJoins: apiStats.recentJoins || []
+          });
+        }
       } catch (err) {
-        console.error(err);
+        console.error('Dashboard fetch error:', err);
       } finally {
         setLoading(false);
       }
@@ -55,8 +65,6 @@ const Dashboard: React.FC = () => {
       <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
     </div>
   );
-
-  if (!stats) return <div className="p-10 text-red-500 font-bold">Failed to load dashboard data. Check backend logs.</div>;
 
   const kpis = [
     { title: 'Total Employees', value: stats.totalEmployees, subtitle: 'in the organization', icon: Users },
@@ -187,17 +195,9 @@ const Dashboard: React.FC = () => {
                 </tr>
               ))}
               {(!stats.recentJoins || stats.recentJoins.length === 0) && (
-                <tr className="border-b border-border/50 hover:bg-white/5 transition-colors">
-                  <td className="px-6 py-4 text-white font-medium">EMP-001</td>
-                  <td className="px-6 py-4">
-                    <div className="font-bold text-white">John Doe</div>
-                    <div className="text-sm text-muted-foreground">Software Engineer</div>
-                  </td>
-                  <td className="px-6 py-4 text-white/90">Engineering</td>
-                  <td className="px-6 py-4 text-right">
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                      Active
-                    </span>
+                <tr>
+                  <td colSpan={4} className="px-6 py-10 text-center text-muted-foreground italic">
+                    No recent joins to display
                   </td>
                 </tr>
               )}

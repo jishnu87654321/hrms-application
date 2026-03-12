@@ -77,8 +77,10 @@ const createEmployee = async (req, res) => {
   try {
     const validatedData = employeeSchema.parse(req.body);
 
-    const existingEmail = await prisma.employee.findUnique({ where: { email: validatedData.email } });
-    if (existingEmail) return res.status(400).json({ message: 'Email already exists' });
+    if (validatedData.email) {
+      const existingEmail = await prisma.employee.findUnique({ where: { email: validatedData.email } });
+      if (existingEmail) return res.status(400).json({ message: 'Email already exists' });
+    }
 
     const existingCode = await prisma.employee.findUnique({ where: { employeeCode: validatedData.employeeCode } });
     if (existingCode) return res.status(400).json({ message: 'Employee code already exists' });
@@ -118,8 +120,8 @@ const updateEmployee = async (req, res) => {
 
     const validatedData = employeeSchema.parse(req.body);
 
-    // Check for duplicates if changed
-    if (validatedData.email !== employee.email) {
+    // Check for duplicates if email changed and is not null
+    if (validatedData.email && validatedData.email !== employee.email) {
       const existingEmail = await prisma.employee.findUnique({ where: { email: validatedData.email } });
       if (existingEmail) return res.status(400).json({ message: 'Email already exists' });
     }

@@ -16,6 +16,56 @@ import { Link } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { uploadService } from '../services/api';
 
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+/**
+ * Convert an Excel serial date number OR a date string into an ISO date string.
+ */
+const parseExcelDate = (dateVal: any): string => {
+  if (!dateVal) return '';
+  if (typeof dateVal === 'number') {
+    // Excel serial date: days since 1899-12-30
+    const d = new Date(Math.round((dateVal - 25569) * 86400 * 1000));
+    return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0];
+  }
+  const d = new Date(dateVal);
+  return isNaN(d.getTime()) ? String(dateVal) : d.toISOString().split('T')[0];
+};
+
+/**
+ * Normalise a raw employment-type value to a valid backend enum.
+ * Prisma only has FULL_TIME | INTERN.
+ */
+const normalizeEmploymentType = (raw: string): string => {
+  const v = String(raw || '').trim().toUpperCase().replace(/[\s\-]+/g, '_');
+  const internVariants = ['INTERN', 'INTERNSHIP', 'TRAINEE', 'APPRENTICE'];
+  return internVariants.includes(v) ? 'INTERN' : 'FULL_TIME';
+};
+
+/**
+ * Map a single Excel row to a clean backend-compatible employee object.
+ * No extra fields (_original, etc.) are included.
+ * Empty strings become null for nullable fields.
+ */
+const mapRow = (row: any) => {
+  const email     = String(row['Email'] || '').trim().toLowerCase();
+  const phone     = String(row['Contact Num'] || '').trim();
+  const doj       = parseExcelDate(row['DOJ']);
+
+  return {
+    employeeCode:    String(row['Emp No.'] || '').trim(),
+    fullName:        String(row['Name'] || '').trim(),
+    role:            String(row['Role'] || '').trim(),
+    employmentType:  normalizeEmploymentType(row['Type of Employment'] || ''),
+    dateOfJoining:   doj   || null,            // null if date is missing/unparseable
+    team:            String(row['Team'] || '').trim(),
+    phoneNumber:     phone || null,             // null if missing
+    email:           email || null,             // null if missing
+  };
+};
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 const BulkUpload: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -24,19 +74,6 @@ const BulkUpload: React.FC = () => {
   const [previewData, setPreviewData] = useState<any[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const parseExcelDate = (dateVal: any) => {
-    if (!dateVal) return '';
-    if (typeof dateVal === 'number') {
-      const date = new Date(Math.round((dateVal - 25569) * 86400 * 1000));
-      return date.toISOString().split('T')[0];
-    }
-    const parsed = new Date(dateVal);
-    if (!isNaN(parsed.getTime())) {
-      return parsed.toISOString().split('T')[0];
-    }
-    return String(dateVal);
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -54,20 +91,9 @@ const BulkUpload: React.FC = () => {
           const wb = XLSX.read(bstr, { type: 'binary' });
           const wsname = wb.SheetNames[0];
           const ws = wb.Sheets[wsname];
-          const data = XLSX.utils.sheet_to_json(ws);
-          
-          const mapped = data.map((row: any) => ({
-            fullName: row['Name'] || '',
-            role: row['Role'] || '',
-            employmentType: row['Type of Employment'] || 'FULL_TIME',
-            employeeCode: row['Emp No.'] || '',
-            dateOfJoining: parseExcelDate(row['DOJ']),
-            team: row['Team'] || '',
-            phoneNumber: String(row['Contact Num'] || ''),
-            email: row['Email'] || '',
-            _original: row
-          }));
-
+          // raw: false so XLSX gives us the raw cell values (numbers for dates, etc.)
+          const data = XLSX.utils.sheet_to_json(ws, { raw: true });
+          const mapped = (data as any[]).map(mapRow);
           setPreviewData(mapped);
           setShowPreview(true);
         } catch (err: any) {
@@ -87,8 +113,8 @@ const BulkUpload: React.FC = () => {
 
     try {
       const resp = await uploadService.bulkUploadJson({
-        employees: previewData,
-        fileName: file.name
+        employees: previewData,   // already clean — no _original field
+        fileName: file.name,
       });
       setResult(resp.data);
       setFile(null);
@@ -96,7 +122,14 @@ const BulkUpload: React.FC = () => {
       setShowPreview(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to import employee data.');
+      // Show the most useful available error message from the backend
+      const data = err.response?.data;
+      const msg =
+        data?.error ||
+        data?.message ||
+        err.message ||
+        'Import failed. Please check your file and try again.';
+      setError(msg);
     } finally {
       setIsUploading(false);
     }
@@ -112,7 +145,7 @@ const BulkUpload: React.FC = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
-    } catch (err) {
+    } catch {
       alert('Failed to download template');
     }
   };
@@ -158,22 +191,27 @@ const BulkUpload: React.FC = () => {
                 <button 
                   onClick={(e) => { e.stopPropagation(); handleUpload(); }}
                   disabled={isUploading}
-                  className="px-8 py-2.5 bg-primary hover:bg-blue-700 text-white rounded-xl font-extrabold shadow-lg shadow-primary/20 transition-all flex items-center gap-2"
+                  className="px-8 py-2.5 bg-primary hover:bg-blue-700 text-white rounded-xl font-extrabold shadow-lg shadow-primary/20 transition-all flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
-                  <span>Confirm Import ({previewData.length})</span>
+                  <span>{isUploading ? 'Importing…' : `Confirm Import (${previewData.length})`}</span>
                 </button>
               )}
             </div>
           </div>
 
+          {/* Error banner */}
           {error && (
             <div className="p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
-              <p className="text-sm font-bold text-red-700">{error}</p>
+              <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-bold text-red-700">Import failed</p>
+                <p className="text-xs text-red-600 mt-0.5 font-medium">{error}</p>
+              </div>
             </div>
           )}
 
+          {/* Data preview */}
           {showPreview && previewData.length > 0 && !result && (
             <div className="bg-white rounded-[32px] border border-slate-100 shadow-xl shadow-slate-200 overflow-hidden animate-in zoom-in-95">
               <div className="bg-slate-900 px-6 py-4 flex items-center justify-between">
@@ -216,12 +254,13 @@ const BulkUpload: React.FC = () => {
               </div>
               {previewData.length > 5 && (
                 <div className="bg-slate-50 border-t border-slate-100 px-6 py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-widest">
-                  And {previewData.length - 5} more rows...
+                  And {previewData.length - 5} more rows…
                 </div>
               )}
             </div>
           )}
 
+          {/* Result summary */}
           {result && (
             <div className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-xl shadow-slate-200 animate-in zoom-in-95">
               <div className="flex items-center justify-between mb-8 border-b border-slate-100 pb-6">
@@ -237,19 +276,19 @@ const BulkUpload: React.FC = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
                 <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total</p>
-                  <p className="text-2xl font-black text-slate-800">{result.summary?.totalRows || 0}</p>
+                  <p className="text-2xl font-black text-slate-800">{result.summary?.totalRows ?? 0}</p>
                 </div>
                 <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
-                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Success</p>
-                  <p className="text-2xl font-black text-emerald-700">{result.summary?.successCount || 0}</p>
+                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Created</p>
+                  <p className="text-2xl font-black text-emerald-700">{result.summary?.successCount ?? 0}</p>
                 </div>
                 <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100">
                   <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1">Skipped (Dup)</p>
-                  <p className="text-2xl font-black text-amber-700">{result.summary?.duplicatesSkipped || 0}</p>
+                  <p className="text-2xl font-black text-amber-700">{result.summary?.duplicatesSkipped ?? 0}</p>
                 </div>
                 <div className="p-4 bg-red-50 rounded-2xl border border-red-100">
                   <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest mb-1">Failed</p>
-                  <p className="text-2xl font-black text-red-700">{result.summary?.failedCount || 0}</p>
+                  <p className="text-2xl font-black text-red-700">{result.summary?.failedCount ?? 0}</p>
                 </div>
               </div>
 
@@ -257,24 +296,20 @@ const BulkUpload: React.FC = () => {
                 <div>
                   <h4 className="flex items-center gap-2 text-sm font-black text-slate-800 uppercase tracking-widest mb-4">
                     <AlertTriangle className="w-4 h-4 text-amber-500" />
-                    Validation Failures
+                    Row-Level Errors
                   </h4>
                   <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-                    {result.errors.map((err: any, idx: number) => {
-                      const msgParts = err.error.includes(':') ? err.error.split(':') : [err.error, ''];
-                      return (
+                    {result.errors.map((err: any, idx: number) => (
                       <div key={idx} className="p-4 bg-slate-50 border border-slate-100 rounded-xl flex items-start gap-3">
                         <div className="bg-white px-2 py-0.5 rounded-lg border border-slate-100 text-[10px] font-black text-slate-400 mt-1">ROW {err.row}</div>
                         <div className="flex-1">
-                          <p className="text-sm font-bold text-slate-800 flex items-center justify-between">
-                            {msgParts[0]}
-                          </p>
-                          <p className="text-xs text-slate-500 font-medium truncate max-w-sm">
-                            Value: {msgParts.length > 1 ? msgParts[1].trim() : (err.data?.email || err.data?.fullName || 'Unknown')}
+                          <p className="text-sm font-bold text-red-700">{err.error}</p>
+                          <p className="text-xs text-slate-400 font-medium mt-0.5">
+                            {err.data?.employeeCode || err.data?.fullName ? `${err.data.employeeCode || ''} ${err.data.fullName || ''}`.trim() : 'Unknown row'}
                           </p>
                         </div>
                       </div>
-                    )})}
+                    ))}
                   </div>
                 </div>
               )}
@@ -282,6 +317,7 @@ const BulkUpload: React.FC = () => {
           )}
         </div>
 
+        {/* Sidebar */}
         <div className="space-y-6">
           <div className="bg-slate-900 p-8 rounded-[32px] text-white shadow-2xl shadow-blue-900/20">
             <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
@@ -291,19 +327,19 @@ const BulkUpload: React.FC = () => {
             <ul className="space-y-4">
               <li className="flex gap-3 text-sm font-medium text-slate-400 leading-relaxed">
                 <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                Use the official <span className="text-blue-400 font-bold">Excel (.xlsx) or CSV Template</span> to map headers correctly.
+                Use the official <span className="text-blue-400 font-bold">Excel (.xlsx) Template</span> — column headers must match exactly.
               </li>
               <li className="flex gap-3 text-sm font-medium text-slate-400 leading-relaxed">
                 <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                "Team" maps to internal categories (Engineering, HR, etc). Invalid ones will fallback to "Other".
+                <span className="text-blue-400 font-bold">Type of Employment</span>: use <code className="text-xs bg-slate-800 px-1 rounded">FULL_TIME</code> or <code className="text-xs bg-slate-800 px-1 rounded">INTERN</code>. Others default to FULL_TIME.
               </li>
               <li className="flex gap-3 text-sm font-medium text-slate-400 leading-relaxed">
                 <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                Rows with duplicate <span className="text-blue-400 font-bold">Email</span> or <span className="text-blue-400 font-bold">Emp No.</span> will be cleanly skipped.
+                Rows with duplicate <span className="text-blue-400 font-bold">Email</span> or <span className="text-blue-400 font-bold">Emp No.</span> are silently skipped.
               </li>
               <li className="flex gap-3 text-sm font-medium text-slate-400 leading-relaxed">
                 <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                DOJ should be standard Excel dates or YYYY-MM-DD text.
+                <span className="text-blue-400 font-bold">Name</span> and <span className="text-blue-400 font-bold">Emp No.</span> are strictly required. All other fields have safe defaults.
               </li>
             </ul>
           </div>

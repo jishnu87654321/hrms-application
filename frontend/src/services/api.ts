@@ -29,8 +29,6 @@ export const employeeService = {
   create: (data: any) => api.post('/employees', data),
   update: (id: string, data: any) => api.put(`/employees/${id}`, data),
   delete: (id: string) => api.delete(`/employees/${id}`),
-  getTrash: () => api.get('/employees/trash'),
-  restore: (id: string) => api.post(`/employees/${id}/restore`),
 };
 
 export const dashboardService = {
@@ -47,7 +45,4 @@ export const uploadService = {
   downloadTemplate: () => api.get('/upload/template', { responseType: 'blob' }),
 };
 
-export const adminService = {
-  getProfile: () => api.get('/admin/me'),
-  updateProfile: (data: any) => api.put('/admin/me', data),
-};
+

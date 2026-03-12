@@ -23,7 +23,7 @@ const employeeSchema = z.object({
   role: z.string().min(2, 'Role is required'),
   employmentType: z.enum(['FULL_TIME', 'INTERN']),
   phoneNumber: z.string().min(10, 'Invalid phone number'),
-  email: z.string().email('Invalid email address'),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
   employeeCode: z.string().min(3, 'Employee code is required'),
   dateOfJoining: z.string().min(1, 'Joining date is required'),
   team: z.string().min(2, 'Team is required'),
