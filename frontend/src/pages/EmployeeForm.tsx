@@ -63,7 +63,7 @@ const EmployeeFormPage: React.FC = () => {
           setValue('dateOfJoining', new Date(emp.dateOfJoining).toISOString().split('T')[0]);
           setValue('team', emp.team || 'OTHER');
         }
-      } catch (err) {
+      } catch {
         setError('Failed to load data.');
       } finally {
         setInitialLoading(false);

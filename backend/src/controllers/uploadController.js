@@ -62,7 +62,7 @@ function parseDate(v) {
  * Prisma schema allows: FULL_TIME | INTERN
  */
 function parseEmploymentType(v) {
-  const s = safeStr(v).toUpperCase().replace(/[\s\-]+/g, '_');
+  const s = safeStr(v).toUpperCase().replace(/[\s-]+/g, '_');
   return ['INTERN', 'INTERNSHIP', 'TRAINEE', 'APPRENTICE'].includes(s)
     ? 'INTERN'
     : 'FULL_TIME';
@@ -74,7 +74,7 @@ function parseEmploymentType(v) {
  */
 function parseTeam(v) {
   if (!v || safeStr(v) === '') return 'OTHER';
-  const s = safeStr(v).toUpperCase().replace(/[\s\-]+/g, '_');
+  const s = safeStr(v).toUpperCase().replace(/[\s-]+/g, '_');
   const valid = [
     'ENGINEERING', 'HR', 'MARKETING', 'SALES', 'FINANCE',
     'OPERATIONS', 'DESIGN', 'SUPPORT', 'PRODUCT', 'SPECIFIC',
@@ -311,20 +311,83 @@ const getUploadLogs = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /upload/template  — Download sample XLSX
 // ─────────────────────────────────────────────────────────────────────────────
-const downloadTemplate = (req, res) => {
-  const xlsx = require('xlsx');
-  const wb = xlsx.utils.book_new();
-  const ws = xlsx.utils.aoa_to_sheet([
-    ['Emp No.', 'Name', 'Role', 'Type of Employment', 'DOJ', 'Team', 'Contact Num', 'Email'],
-    ['EMP001', 'John Doe',   'Developer', 'FULL_TIME', '2023-01-01', 'Engineering', '9876543210', 'john@example.com'],
-    ['EMP002', 'Jane Smith', 'Intern',    'INTERN',    '2023-02-15', 'Design',      '9123456780', 'jane@example.com'],
-    ['EMP003', 'Sam Raju',   'Analyst',   'FULL_TIME', '2024-06-01', 'Operations',  '',           ''],
-  ]);
-  xlsx.utils.book_append_sheet(wb, ws, 'Employees');
-  const buf = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
-  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-  res.setHeader('Content-Disposition', 'attachment; filename=employee_template.xlsx');
-  res.status(200).send(buf);
+const downloadTemplate = async (req, res) => {
+  try {
+    const ExcelJS = require('exceljs');
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Employees');
+
+    // 4. Freeze the header row so column titles stay visible.
+    worksheet.views = [
+      { state: 'frozen', xSplit: 0, ySplit: 1 }
+    ];
+
+    // Define columns
+    worksheet.columns = [
+      { header: 'Emp No.', key: 'empNo', width: 15 },
+      { header: 'Name', key: 'name', width: 25 },
+      { header: 'Role', key: 'role', width: 25 },
+      { header: 'Type of Employment', key: 'employmentType', width: 25 },
+      { header: 'DOJ', key: 'doj', width: 15 },
+      { header: 'Team', key: 'team', width: 25 },
+      { header: 'Contact Num', key: 'contactNum', width: 20 },
+      { header: 'Email', key: 'email', width: 30 }
+    ];
+
+    // Style the header
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+
+    // 3. Add example rows so users understand how to fill the template.
+    worksheet.addRow({
+      empNo: 'EMP001',
+      name: 'John Doe',
+      role: 'Developer',
+      employmentType: 'FULL_TIME',
+      doj: '2023-01-01',
+      team: 'Engineering',
+      contactNum: '9876543210',
+      email: 'john@example.com'
+    });
+
+    // 1 & 2. Add dropdown validations to prevent invalid values
+    for (let i = 2; i <= 1000; i++) {
+      // Type of Employment Dropdown (Column D)
+      worksheet.getCell(`D${i}`).dataValidation = {
+        type: 'list',
+        allowBlank: true,
+        formulae: ['"FULL_TIME,INTERN"'],
+        showErrorMessage: true,
+        errorStyle: 'stop',
+        errorTitle: 'Invalid Selection',
+        error: 'Please select a valid Type of Employment from the dropdown list.',
+      };
+
+      // Team Dropdown (Column F)
+      worksheet.getCell(`F${i}`).dataValidation = {
+        type: 'list',
+        allowBlank: true,
+        formulae: ['"HR,Engineering,Design,Operations,Product,Marketing,Finance,Sales,Other"'],
+        showErrorMessage: true,
+        errorStyle: 'stop',
+        errorTitle: 'Invalid Selection',
+        error: 'Please select a valid Team/Department from the dropdown list.',
+      };
+    }
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=Employee_Upload_Template.xlsx');
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (err) {
+    console.error('Error generating template:', err);
+    res.status(500).json({ message: 'Error generating Excel template' });
+  }
 };
 
 module.exports = { bulkUploadEmployees, bulkUploadJson, getUploadLogs, downloadTemplate };

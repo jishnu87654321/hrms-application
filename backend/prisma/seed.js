@@ -69,15 +69,7 @@ async function main() {
   console.log('\n📋 AdminDetail record stored in AWS RDS:');
   console.log(JSON.stringify(fetched, null, 2));
 
-  // ── 4. Create Departments ──────────────────────────────────────
-  const departments = [
-    'Engineering', 'Human Resources', 'Marketing',
-    'Sales', 'Finance', 'Product', 'Design', 'Customer Support',
-  ];
-  for (const name of departments) {
-    await prisma.department.upsert({ where: { name }, update: {}, create: { name } });
-  }
-  console.log(`\n✔  Departments table → ${departments.length} records`);
+  // ── No separate Departments table in schema ────────────────────
 
   console.log('\n─────────────────────────────────────────────');
   console.log('  🌱 Seed completed — all data stored in AWS');

@@ -1,128 +1,282 @@
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { authService } from '../services/api';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { NetworkBackground } from "../components/login/network-background";
+import { Users, Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { authService } from "../services/api";
 
-const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-});
-
-type LoginForm = z.infer<typeof loginSchema>;
-
-const LoginPage: React.FC = () => {
-  const { login } = useAuth();
+export default function LoginPage() {
+  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [particles, setParticles] = useState<{ x: number; y: number; id: number }[]>([]);
+  const [shake, setShake] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema),
-  });
+  const { login } = useAuth();
 
-  const onSubmit = async (data: LoginForm) => {
+  const triggerSuccessParticles = () => {
+    const newParticles = Array.from({ length: 30 }, (_, i) => ({
+      x: Math.random() * 360 - 180,
+      y: Math.random() * 360 - 180,
+      id: Date.now() + i,
+    }));
+    setParticles(newParticles);
+    setTimeout(() => setParticles([]), 1500);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsLoading(true);
     setError(null);
     try {
-      const response = await authService.login(data);
+      const response = await authService.login({ email, password });
       login(response.data);
+      triggerSuccessParticles();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+      setError(err.response?.data?.message || "Invalid credentials. Please try again.");
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center p-4 bg-gradient-to-br from-indigo-500 to-pink-500 relative overflow-hidden">
-      {/* Background Decorators */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-white/[0.04] rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-black/[0.04] rounded-full blur-3xl pointer-events-none"></div>
+    <main className="min-h-screen relative overflow-hidden bg-[#0c0a1d]">
+      <NetworkBackground />
 
-      <div className="w-full max-w-[420px] bg-white/95 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl p-8 relative z-10 transition-all duration-300">
-        
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">HRMS Admin</h1>
-          <p className="mt-2 text-sm text-gray-500 font-medium">Manage your workforce from one central hub</p>
+      {/* Header */}
+      <motion.header
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="fixed top-0 left-0 right-0 z-50 p-4 sm:p-6"
+      >
+        <div className="container mx-auto flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center group-hover:bg-indigo-500/30 transition-colors">
+              <Users className="w-5 h-5 text-indigo-400" />
+            </div>
+            <span className="text-xl font-bold text-white">HRMS</span>
+          </Link>
+          <Link to="/">
+            <button className="px-4 py-2 text-sm text-white/70 hover:text-white hover:bg-white/10 rounded-md transition-colors">
+              Back to Home
+            </button>
+          </Link>
         </div>
+      </motion.header>
 
-        {error && (
-          <div className="mb-6 bg-red-50 text-red-700 p-4 rounded-lg flex items-center justify-center text-sm font-semibold border border-red-100">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          
-          <div className="space-y-1.5">
-            <label className="block text-sm font-semibold text-gray-700">Email Address</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Mail className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                {...register('email')}
-                type="email"
-                placeholder="name@company.com"
-                className={`block w-full pl-10 pr-3 py-2.5 bg-white border ${errors.email ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'} rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-0 sm:text-sm transition-colors`}
+      {/* Login Card */}
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 30, scale: 0.95 }}
+          animate={{
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            x: shake ? [0, -10, 10, -10, 10, 0] : 0,
+          }}
+          transition={{ duration: shake ? 0.5 : 0.7, delay: shake ? 0 : 0.2 }}
+          className="w-full max-w-md relative"
+        >
+          {/* Success particles */}
+          <AnimatePresence>
+            {particles.map((particle) => (
+              <motion.div
+                key={particle.id}
+                initial={{ scale: 0, x: 0, y: 0, opacity: 1 }}
+                animate={{
+                  scale: [0, 1, 0.5],
+                  x: particle.x,
+                  y: particle.y,
+                  opacity: [1, 1, 0],
+                }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 1, ease: "easeOut" }}
+                className="absolute left-1/2 top-1/2 w-3 h-3 rounded-full pointer-events-none z-50"
+                style={{
+                  backgroundColor: ["#6366f1", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b"][
+                    Math.floor(Math.random() * 5)
+                  ],
+                }}
               />
-            </div>
-            {errors.email && <p className="text-sm text-red-500 font-medium">{errors.email.message}</p>}
-          </div>
+            ))}
+          </AnimatePresence>
 
-          <div className="space-y-1.5">
-            <label className="block text-sm font-semibold text-gray-700">Password</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Lock className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                {...register('password')}
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                className={`block w-full pl-10 pr-10 py-2.5 bg-white border ${errors.password ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'} rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-0 sm:text-sm transition-colors`}
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
-                onClick={() => setShowPassword(!showPassword)}
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-              </button>
-            </div>
-            {errors.password && <p className="text-sm text-red-500 font-medium">{errors.password.message}</p>}
-          </div>
-
-          <div className="flex items-center pb-2">
-            <input
-              id="remember-me"
-              type="checkbox"
-              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer transition-colors"
+          {/* Glassmorphism card */}
+          <div className="relative">
+            {/* Glow effect */}
+            <motion.div
+              animate={{ opacity: [0.3, 0.5, 0.3] }}
+              transition={{ duration: 3, repeat: Infinity }}
+              className="absolute -inset-1 bg-gradient-to-r from-indigo-500/30 via-violet-500/30 to-cyan-500/30 rounded-2xl blur-xl"
             />
-            <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-600 font-medium cursor-pointer select-none">
-              Remember me
-            </label>
+
+            <div className="relative bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl">
+              {/* Header */}
+              <div className="text-center mb-8">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", duration: 0.6, delay: 0.4 }}
+                  className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/30"
+                >
+                  <Users className="w-8 h-8 text-white" />
+                </motion.div>
+                <motion.h1
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className="text-2xl font-bold text-white mb-2"
+                >
+                  Welcome Back
+                </motion.h1>
+                <motion.p
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                  className="text-white/60"
+                >
+                  Sign in to your HRMS dashboard
+                </motion.p>
+              </div>
+
+
+
+              {/* Error message */}
+              <AnimatePresence>
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: "auto" }}
+                    exit={{ opacity: 0, y: -10, height: 0 }}
+                    className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center gap-2"
+                  >
+                    <AlertCircle className="w-4 h-4 text-red-400" />
+                    <p className="text-sm text-red-400">{error}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Login Form */}
+              <motion.form
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8 }}
+                onSubmit={handleSubmit}
+                className="space-y-4"
+              >
+                <motion.div
+                  className="space-y-2"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.9 }}
+                >
+                  <label className="text-sm text-white/70">Email Address</label>
+                  <div className="relative group">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-indigo-400 transition-colors" />
+                    <input
+                      type="email"
+                      placeholder="you@company.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full pl-10 pr-4 h-11 bg-white/5 border border-white/10 text-white placeholder:text-white/30 rounded-md focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 focus:outline-none transition-all"
+                    />
+                  </div>
+                </motion.div>
+
+                <motion.div
+                  className="space-y-2"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 1 }}
+                >
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm text-white/70">Password</label>
+                    <button type="button" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+                      Forgot password?
+                    </button>
+                  </div>
+                  <div className="relative group">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-indigo-400 transition-colors" />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full pl-10 pr-10 h-11 bg-white/5 border border-white/10 text-white placeholder:text-white/30 rounded-md focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 focus:outline-none transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/60 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1.1 }}
+                >
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="relative w-full h-11 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white font-medium rounded-md shadow-lg shadow-indigo-500/25 border-0 overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    <motion.div
+                      animate={{
+                        boxShadow: [
+                          "0 0 20px rgba(99, 102, 241, 0.3)",
+                          "0 0 40px rgba(99, 102, 241, 0.5)",
+                          "0 0 20px rgba(99, 102, 241, 0.3)",
+                        ],
+                      }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="absolute inset-0 rounded-md"
+                    />
+                    {isLoading ? (
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full mx-auto"
+                      />
+                    ) : (
+                      <span className="relative flex items-center justify-center z-10">
+                        Sign In
+                        <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                      </span>
+                    )}
+                  </button>
+                </motion.div>
+              </motion.form>
+            </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-md text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:hover:scale-100"
+          {/* Trust badges */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.2 }}
+            className="mt-8 text-center"
           >
-            {isLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              'Sign in'
-            )}
-          </button>
-        </form>
+            <p className="text-white/30 text-xs mb-3">Trusted by enterprise teams worldwide</p>
+            <div className="flex items-center justify-center gap-6 text-white/20">
+              <span className="text-sm font-medium">256-bit SSL</span>
+              <span className="w-1 h-1 rounded-full bg-white/20" />
+              <span className="text-sm font-medium">SOC 2 Compliant</span>
+              <span className="w-1 h-1 rounded-full bg-white/20" />
+              <span className="text-sm font-medium">GDPR Ready</span>
+            </div>
+          </motion.div>
+        </motion.div>
       </div>
-    </div>
+    </main>
   );
-};
-
-export default LoginPage;
+}

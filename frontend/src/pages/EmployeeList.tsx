@@ -49,6 +49,7 @@ const EmployeeList: React.FC = () => {
       fetchData();
     }, 300);
     return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
 
   const handleDelete = async (id: string) => {
@@ -56,7 +57,7 @@ const EmployeeList: React.FC = () => {
       try {
         await employeeService.delete(id);
         fetchData();
-      } catch (err) {
+      } catch {
         alert('Failed to delete employee');
       }
     }
@@ -96,14 +97,14 @@ const EmployeeList: React.FC = () => {
               value={filters.search}
               onChange={handleFilterChange}
               placeholder="Search by name, ID..."
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all text-sm font-medium"
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 text-slate-900 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all text-sm font-medium"
             />
           </div>
           <select
             name="team"
             value={filters.team}
             onChange={handleFilterChange}
-            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all text-sm font-medium appearance-none"
+            className="w-full px-4 py-2.5 bg-slate-50 text-slate-900 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all text-sm font-medium appearance-none"
           >
              <option value="">All Teams (Departments)</option>
             {['ENGINEERING', 'HR', 'MARKETING', 'SALES', 'FINANCE', 'OPERATIONS', 'DESIGN', 'SUPPORT', 'PRODUCT', 'SPECIFIC', 'SOLID', 'SOPS', 'STUDENT_RELATED_BUS', 'OTHER'].map(d => <option key={d} value={d}>{d}</option>)}
@@ -112,7 +113,7 @@ const EmployeeList: React.FC = () => {
             name="role"
             value={filters.role}
             onChange={handleFilterChange}
-            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all text-sm font-medium appearance-none"
+            className="w-full px-4 py-2.5 bg-slate-50 text-slate-900 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all text-sm font-medium appearance-none"
           >
             <option value="">All Roles</option>
             <option value="Engineer">Engineer</option>
@@ -124,7 +125,7 @@ const EmployeeList: React.FC = () => {
             name="type"
             value={filters.type}
             onChange={handleFilterChange}
-            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all text-sm font-medium appearance-none"
+            className="w-full px-4 py-2.5 bg-slate-50 text-slate-900 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all text-sm font-medium appearance-none"
           >
             <option value="">All Types</option>
             <option value="FULL_TIME">Full-time</option>
@@ -189,7 +190,11 @@ const EmployeeList: React.FC = () => {
                       <p className="text-xs text-slate-500">{emp.phoneNumber}</p>
                     </td>
                     <td className="px-6 py-5">
-                      <p className="text-sm text-slate-600 font-semibold">{new Date(emp.dateOfJoining).toLocaleDateString()}</p>
+                      <p className="text-sm text-slate-600 font-semibold">
+                        {emp.dateOfJoining
+                          ? new Date(emp.dateOfJoining).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                          : '—'}
+                      </p>
                     </td>
                     <td className="px-6 py-5 text-right">
                       <div className="flex items-center justify-end space-x-2">

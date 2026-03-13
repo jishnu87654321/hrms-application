@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useRef } from 'react';
 import { 
   Upload, 
@@ -37,7 +36,7 @@ const parseExcelDate = (dateVal: any): string => {
  * Prisma only has FULL_TIME | INTERN.
  */
 const normalizeEmploymentType = (raw: string): string => {
-  const v = String(raw || '').trim().toUpperCase().replace(/[\s\-]+/g, '_');
+  const v = String(raw || '').trim().toUpperCase().replace(/[\s-]+/g, '_');
   const internVariants = ['INTERN', 'INTERNSHIP', 'TRAINEE', 'APPRENTICE'];
   return internVariants.includes(v) ? 'INTERN' : 'FULL_TIME';
 };
@@ -96,7 +95,7 @@ const BulkUpload: React.FC = () => {
           const mapped = (data as any[]).map(mapRow);
           setPreviewData(mapped);
           setShowPreview(true);
-        } catch (err: any) {
+        } catch {
           setError('Failed to parse Excel file. Please ensure it follows the template format.');
         }
       };
@@ -245,7 +244,11 @@ const BulkUpload: React.FC = () => {
                         <td className="px-6 py-3 text-slate-600">{row.email}</td>
                         <td className="px-6 py-3 text-slate-600"><span className="bg-slate-100 px-2 py-0.5 rounded text-xs text-slate-700 font-bold">{row.role}</span></td>
                         <td className="px-6 py-3 text-slate-600">{row.team}</td>
-                        <td className="px-6 py-3 text-slate-600">{row.dateOfJoining}</td>
+                        <td className="px-6 py-3 text-slate-600">
+                          {row.dateOfJoining
+                            ? new Date(row.dateOfJoining).toLocaleDateString('en-GB')
+                            : '—'}
+                        </td>
                         <td className="px-6 py-3 text-slate-600">{row.employmentType}</td>
                       </tr>
                     ))}
@@ -325,21 +328,21 @@ const BulkUpload: React.FC = () => {
               Upload Guidelines
             </h3>
             <ul className="space-y-4">
-              <li className="flex gap-3 text-sm font-medium text-slate-400 leading-relaxed">
-                <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                Use the official <span className="text-blue-400 font-bold">Excel (.xlsx) Template</span> — column headers must match exactly.
+              <li className="flex gap-2 text-sm font-medium text-slate-400 leading-relaxed items-start">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                <span>Use the official <span className="text-blue-400 font-bold">Excel (.xlsx) Template</span> — column headers must match exactly.</span>
               </li>
-              <li className="flex gap-3 text-sm font-medium text-slate-400 leading-relaxed">
-                <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                <span className="text-blue-400 font-bold">Type of Employment</span>: use <code className="text-xs bg-slate-800 px-1 rounded">FULL_TIME</code> or <code className="text-xs bg-slate-800 px-1 rounded">INTERN</code>. Others default to FULL_TIME.
+              <li className="flex gap-2 text-sm font-medium text-slate-400 leading-relaxed items-start">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                <span><span className="text-blue-400 font-bold">Type of Employment</span>: use <code className="text-xs bg-slate-800 px-1 rounded text-white">FULL_TIME</code> or <code className="text-xs bg-slate-800 px-1 rounded text-white">INTERN</code>. Others default to FULL_TIME.</span>
               </li>
-              <li className="flex gap-3 text-sm font-medium text-slate-400 leading-relaxed">
-                <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                Rows with duplicate <span className="text-blue-400 font-bold">Email</span> or <span className="text-blue-400 font-bold">Emp No.</span> are silently skipped.
+              <li className="flex gap-2 text-sm font-medium text-slate-400 leading-relaxed items-start">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                <span>Rows with duplicate <span className="text-blue-400 font-bold">Email</span> or <span className="text-blue-400 font-bold">Emp No.</span> are silently skipped.</span>
               </li>
-              <li className="flex gap-3 text-sm font-medium text-slate-400 leading-relaxed">
-                <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                <span className="text-blue-400 font-bold">Name</span> and <span className="text-blue-400 font-bold">Emp No.</span> are strictly required. All other fields have safe defaults.
+              <li className="flex gap-2 text-sm font-medium text-slate-400 leading-relaxed items-start">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                <span><span className="text-blue-400 font-bold">Name</span> and <span className="text-blue-400 font-bold">Emp No.</span> are strictly required. All other fields have safe defaults.</span>
               </li>
             </ul>
           </div>

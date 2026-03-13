@@ -7,6 +7,7 @@ import {
 import { 
   BarChart, 
   Bar, 
+  LabelList,
   PieChart,
   Pie,
   XAxis, 
@@ -72,7 +73,11 @@ const Dashboard: React.FC = () => {
     { title: 'New This Month', value: stats.newThisMonth, subtitle: 'recently joined', icon: UserPlus },
   ];
 
-  const COLORS = ['#6366f1', '#8b5cf6', '#0ea5e9', '#ec4899', '#f43f5e'];
+  const COLORS = [
+    '#6366f1', '#8b5cf6', '#0ea5e9', '#ec4899',
+    '#f43f5e', '#10b981', '#f59e0b', '#14b8a6',
+    '#f97316', '#06b6d4',
+  ];
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -112,20 +117,37 @@ const Dashboard: React.FC = () => {
         {/* Headcount Bar Chart */}
         <div className="lg:col-span-2 bg-card p-6 rounded-2xl border border-border">
           <h3 className="text-lg font-heading font-bold text-white mb-6">Headcount by Department</h3>
-          <div className="h-[300px]">
+          <div className="h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.departmentStats} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+              <BarChart
+                data={stats.departmentStats}
+                margin={{ top: 24, right: 0, left: -20, bottom: 48 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e1e2d" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#8b8b9e', fontSize: 13 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#8b8b9e', fontSize: 13 }} />
-                <RechartsTooltip 
-                  cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  interval={0}
+                  tick={{ fill: '#8b8b9e', fontSize: 12 }}
+                  angle={-35}
+                  textAnchor="end"
+                  dy={6}
+                />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#8b8b9e', fontSize: 13 }} allowDecimals={false} />
+                <RechartsTooltip
+                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                   contentStyle={{ backgroundColor: '#0a0a0f', border: '1px solid #1e1e2d', borderRadius: '12px', color: '#fff' }}
                 />
-                <Bar dataKey="count" radius={[6, 6, 0, 0]} barSize={40}>
-                   {stats.departmentStats.map((_: any, index: number) => (
-                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                   ))}
+                <Bar dataKey="count" radius={[6, 6, 0, 0]} barSize={36}>
+                  {stats.departmentStats.map((_: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                  <LabelList
+                    dataKey="count"
+                    position="top"
+                    style={{ fill: '#ffffff', fontSize: 12, fontWeight: 700 }}
+                  />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -175,7 +197,7 @@ const Dashboard: React.FC = () => {
                 <th className="px-6 py-4 font-medium">Employee ID</th>
                 <th className="px-6 py-4 font-medium">Name & Role</th>
                 <th className="px-6 py-4 font-medium">Department</th>
-                <th className="px-6 py-4 font-medium text-right">Status</th>
+                <th className="px-6 py-4 font-medium text-right">Joined</th>
               </tr>
             </thead>
             <tbody className="text-[15px]">
@@ -186,10 +208,14 @@ const Dashboard: React.FC = () => {
                     <div className="font-bold text-white">{emp.fullName}</div>
                     <div className="text-sm text-muted-foreground">{emp.role}</div>
                   </td>
-                  <td className="px-6 py-4 text-white/90">{emp.department?.name || 'Operations'}</td>
+                  <td className="px-6 py-4 text-white/90 capitalize">
+                    {emp.team ? emp.team.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase()) : '—'}
+                  </td>
                   <td className="px-6 py-4 text-right">
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                      Active
+                    <span className="text-sm font-semibold text-muted-foreground">
+                      {emp.dateOfJoining
+                        ? new Date(emp.dateOfJoining).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                        : '—'}
                     </span>
                   </td>
                 </tr>
