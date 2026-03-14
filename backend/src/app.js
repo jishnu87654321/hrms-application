@@ -30,13 +30,15 @@ const path = require('path');
 const isProduction = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
 const uploadDir = isProduction ? '/tmp/uploads' : path.join(process.cwd(), 'uploads');
 
-try {
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-    console.log(`Created upload directory at: ${uploadDir}`);
+if (!isProduction) {
+  try {
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+      console.log(`Created local upload directory: ${uploadDir}`);
+    }
+  } catch (err) {
+    console.warn('Could not ensure upload dir on startup:', err.message);
   }
-} catch (err) {
-  console.warn(`Warning: Could not create upload directory at ${uploadDir}:`, err.message);
 }
 
 // Rate limiting
