@@ -5,19 +5,18 @@ const fs = require('fs');
 const path = require('path');
 
 // SSL Certificate for RDS
-const possibleCertPaths = [
-  path.resolve(__dirname, '../../certs/global-bundle.pem'),
-  path.resolve(process.cwd(), 'certs/global-bundle.pem'),
-  path.resolve(process.cwd(), 'backend/certs/global-bundle.pem')
-];
-
 let ca;
-for (const p of possibleCertPaths) {
-  if (fs.existsSync(p)) {
-    ca = fs.readFileSync(p).toString();
-    console.log(`Found certificate at: ${p}`);
-    break;
+const certPath = path.join(process.cwd(), 'certs', 'global-bundle.pem');
+
+if (fs.existsSync(certPath)) {
+  try {
+    ca = fs.readFileSync(certPath).toString();
+    console.log('SSL certificate loaded successfully');
+  } catch (err) {
+    console.error('Failed to read SSL certificate:', err.message);
   }
+} else {
+  console.log('SSL certificate not found at:', certPath);
 }
 
 const pool = new Pool({
