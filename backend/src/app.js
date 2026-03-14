@@ -17,8 +17,10 @@ app.use(express.json());
 
 // Create uploads directory if not exists
 const fs = require('fs');
-if (!fs.existsSync('uploads')) {
-  fs.mkdirSync('uploads');
+const path = require('path');
+const uploadDir = process.env.VERCEL ? '/tmp/uploads' : 'uploads';
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
 }
 
 // Rate limiting

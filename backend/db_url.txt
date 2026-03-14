@@ -1,0 +1,1 @@
+postgresql://postgres:jishnu1234@database-1.c786aiyau0wb.eu-north-1.rds.amazonaws.com:5432/postgres?schema=public

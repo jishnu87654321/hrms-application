@@ -4,6 +4,7 @@ import { motion, useMotionValue, useTransform, useSpring } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Shield, Users, BarChart3, FileSpreadsheet, Clock } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export function Hero() {
   const [barHeights, setBarHeights] = useState([60, 85, 45, 70, 55, 90, 40, 75]);
@@ -12,6 +13,7 @@ export function Hero() {
 
   const rotateX = useSpring(useTransform(mouseY, [-300, 300], [5, -5]), { stiffness: 100, damping: 30 });
   const rotateY = useSpring(useTransform(mouseX, [-300, 300], [-5, 5]), { stiffness: 100, damping: 30 });
+  const router = useRouter();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -97,13 +99,13 @@ export function Hero() {
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button size="lg" className="group">
+                <Button size="lg" className="group" onClick={() => router.push("/login")}>
                   Get Started
                   <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </Button>
               </motion.div>
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button size="lg" variant="outline" className="border-border hover:bg-secondary">
+                <Button size="lg" variant="outline" className="border-border hover:bg-secondary" onClick={() => router.push("/login")}>
                   Admin Login
                 </Button>
               </motion.div>

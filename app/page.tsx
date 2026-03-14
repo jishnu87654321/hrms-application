@@ -20,8 +20,7 @@ export default function Home() {
 
   return (
     <main 
-      className="min-h-screen bg-background cursor-pointer"
-      onClick={handleClick}
+      className="min-h-screen bg-background"
     >
       <Background3D />
       <Navbar />
