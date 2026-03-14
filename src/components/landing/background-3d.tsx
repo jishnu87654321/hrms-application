@@ -36,9 +36,9 @@ function Particles({ count = 200 }: { count?: number }) {
     return { positions, colors, sizes };
   }, [count]);
 
-  useFrame((state) => {
+  useFrame(() => {
     if (!mesh.current) return;
-    const time = state.clock.elapsedTime;
+    const time = performance.now() / 1000;
     mesh.current.rotation.x = time * 0.02 + pointer.y * 0.1;
     mesh.current.rotation.y = time * 0.03 + pointer.x * 0.1;
     const positions = mesh.current.geometry.attributes.position.array as Float32Array;
@@ -65,9 +65,9 @@ function FloatingOrb({ position, scale, color, speed = 1 }: { position: [number,
   const mesh = useRef<THREE.Mesh>(null);
   const { pointer } = useThree();
 
-  useFrame((state) => {
+  useFrame(() => {
     if (!mesh.current) return;
-    const time = state.clock.elapsedTime * speed;
+    const time = (performance.now() / 1000) * speed;
     mesh.current.position.y = position[1] + Math.sin(time) * 0.3;
     mesh.current.position.x = position[0] + Math.cos(time * 0.7) * 0.2 + pointer.x * 0.5;
     mesh.current.position.z = position[2] + pointer.y * 0.3;
@@ -87,9 +87,9 @@ function FloatingTorus({ position, scale, color }: { position: [number, number, 
   const mesh = useRef<THREE.Mesh>(null);
   const { pointer } = useThree();
 
-  useFrame((state) => {
+  useFrame(() => {
     if (!mesh.current) return;
-    const time = state.clock.elapsedTime;
+    const time = performance.now() / 1000;
     mesh.current.rotation.x = time * 0.3 + pointer.y * 0.5;
     mesh.current.rotation.y = time * 0.2 + pointer.x * 0.5;
     mesh.current.position.y = position[1] + Math.sin(time * 0.5) * 0.4;

@@ -23,9 +23,9 @@ function NetworkNodes({ count = 60 }: { count?: number }) {
     return { positions, velocities, scales };
   }, [count]);
 
-  useFrame((state) => {
+  useFrame(() => {
     if (!mesh.current) return;
-    const time = state.clock.elapsedTime;
+    const time = performance.now() / 1000;
     for (let i = 0; i < count; i++) {
       nodes.positions[i][0] += nodes.velocities[i][0] + Math.sin(time * 0.3 + i) * 0.001;
       nodes.positions[i][1] += nodes.velocities[i][1] + Math.cos(time * 0.4 + i) * 0.001;
@@ -79,9 +79,9 @@ function ConnectionLines({ nodeCount = 60 }: { nodeCount?: number }) {
     return { positions: new Float32Array(positions) };
   }, [nodeCount]);
 
-  useFrame((state) => {
+  useFrame(() => {
     if (!linesRef.current) return;
-    const time = state.clock.elapsedTime;
+    const time = performance.now() / 1000;
     linesRef.current.rotation.y = time * 0.02 + pointer.x * 0.1;
     linesRef.current.rotation.x = pointer.y * 0.05;
   });
@@ -116,9 +116,9 @@ function ParticleField({ count = 300 }: { count?: number }) {
     return { positions, colors };
   }, [count]);
 
-  useFrame((state) => {
+  useFrame(() => {
     if (!points.current) return;
-    const time = state.clock.elapsedTime;
+    const time = performance.now() / 1000;
     points.current.rotation.y = time * 0.01 + pointer.x * 0.05;
     points.current.rotation.x = pointer.y * 0.03;
     const positions = points.current.geometry.attributes.position.array as Float32Array;
@@ -143,9 +143,9 @@ function ParticleField({ count = 300 }: { count?: number }) {
 function GlowOrb({ position, scale, color }: { position: [number, number, number]; scale: number; color: string; }) {
   const mesh = useRef<THREE.Mesh>(null);
   const { pointer } = useThree();
-  useFrame((state) => {
+  useFrame(() => {
     if (!mesh.current) return;
-    const time = state.clock.elapsedTime;
+    const time = performance.now() / 1000;
     mesh.current.position.y = position[1] + Math.sin(time * 0.4) * 0.5;
     mesh.current.position.x = position[0] + Math.cos(time * 0.3) * 0.3 + pointer.x * 0.2;
     mesh.current.scale.setScalar(scale * (1 + Math.sin(time * 0.8) * 0.1));
@@ -161,9 +161,9 @@ function GlowOrb({ position, scale, color }: { position: [number, number, number
 function RotatingRing({ position, scale, color }: { position: [number, number, number]; scale: number; color: string; }) {
   const mesh = useRef<THREE.Mesh>(null);
   const { pointer } = useThree();
-  useFrame((state) => {
+  useFrame(() => {
     if (!mesh.current) return;
-    const time = state.clock.elapsedTime;
+    const time = performance.now() / 1000;
     mesh.current.rotation.x = time * 0.2 + pointer.y * 0.3;
     mesh.current.rotation.y = time * 0.15 + pointer.x * 0.3;
     mesh.current.rotation.z = time * 0.1;

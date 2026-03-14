@@ -11,7 +11,7 @@ const routes = require('./routes');
 
 // Middleware
 app.use(cors({
-  origin: "https://hrms-integrated.vercel.app",
+  origin: ["https://hrms-integrated.vercel.app", "http://localhost:5173", "http://localhost:3000"],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
@@ -51,6 +51,10 @@ app.use('/api', limiter);
 app.use('/api', routes);
 
 const errorHandler = require('./middleware/errorHandler');
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', message: 'HRMS Backend is running' });
+});
 
 // Basic route
 app.get('/', (req, res) => {
