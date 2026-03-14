@@ -7,7 +7,7 @@ const path = require('path');
 
 // SSL Certificate for RDS
 let ca;
-const certPath = path.join(process.cwd(), 'certs', 'global-bundle.pem');
+const certPath = path.resolve(__dirname, '../../certs/global-bundle.pem');
 console.log('Prisma Utils: Checking for cert at', certPath);
 
 if (fs.existsSync(certPath)) {
