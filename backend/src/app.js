@@ -16,7 +16,7 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
-app.options("*", cors()); // Enable preflight for all routes
+// app.options("/:path*", cors()); // Enable preflight for all routes
 
 app.use(helmet({
   crossOriginResourcePolicy: false, // Required if serving assets cross-origin
@@ -46,7 +46,7 @@ const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100 // limit each IP to 100 requests per windowMs
 });
-app.use('/api/', limiter);
+// app.use('/api/:path*', limiter);
 
 // Routes
 app.use('/api', routes);
