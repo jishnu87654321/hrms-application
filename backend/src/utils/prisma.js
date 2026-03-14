@@ -1,3 +1,4 @@
+console.log('Prisma Utils: Initializing...');
 const { PrismaClient } = require('@prisma/client');
 const { PrismaPg } = require('@prisma/adapter-pg');
 const { Pool } = require('pg');
@@ -7,6 +8,7 @@ const path = require('path');
 // SSL Certificate for RDS
 let ca;
 const certPath = path.join(process.cwd(), 'certs', 'global-bundle.pem');
+console.log('Prisma Utils: Checking for cert at', certPath);
 
 if (fs.existsSync(certPath)) {
   try {
@@ -15,15 +17,15 @@ if (fs.existsSync(certPath)) {
   } catch (err) {
     console.error('Failed to read SSL certificate:', err.message);
   }
-} else {
-  console.log('SSL certificate not found at:', certPath);
 }
 
+console.log('Prisma Utils: Setting up connection pool...');
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: ca ? { rejectUnauthorized: false, ca } : false
 });
 
+console.log('Prisma Utils: Creating Prisma client...');
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter, log: ['error', 'warn'] });
 
