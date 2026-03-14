@@ -19,13 +19,14 @@ if (fs.existsSync(certPath)) {
   }
 }
 
-console.log('Prisma Utils: Setting up connection pool...');
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: ca ? { rejectUnauthorized: false, ca } : false
+  ssl: { rejectUnauthorized: false },
+  connectionTimeoutMillis: 30000,
+  idleTimeoutMillis: 10000
 });
 
-console.log('Prisma Utils: Creating Prisma client...');
+console.log('Prisma Utils: Creating Prisma client with driver adapter...');
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter, log: ['error', 'warn'] });
 
