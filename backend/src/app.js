@@ -10,8 +10,17 @@ const app = express();
 const routes = require('./routes');
 
 // Middleware
-app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: "https://hrms-integrated.vercel.app",
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+app.options("*", cors()); // Enable preflight for all routes
+
+app.use(helmet({
+  crossOriginResourcePolicy: false, // Required if serving assets cross-origin
+}));
 app.use(morgan('dev'));
 app.use(express.json());
 
