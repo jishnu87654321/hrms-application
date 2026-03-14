@@ -4,7 +4,8 @@ const multer = require('multer');
 const { bulkUploadEmployees, bulkUploadJson, getUploadLogs, downloadTemplate } = require('../controllers/uploadController');
 const { protect } = require('../middleware/authMiddleware');
 
-const upload = multer({ dest: 'uploads/' });
+const isProduction = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
+const upload = multer({ dest: isProduction ? '/tmp/uploads' : 'uploads/' });
 
 router.use(protect);
 

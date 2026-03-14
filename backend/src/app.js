@@ -27,9 +27,16 @@ app.use(express.json());
 // Create uploads directory if not exists
 const fs = require('fs');
 const path = require('path');
-const uploadDir = process.env.VERCEL ? '/tmp/uploads' : 'uploads';
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+const isProduction = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
+const uploadDir = isProduction ? '/tmp/uploads' : path.join(process.cwd(), 'uploads');
+
+try {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+    console.log(`Created upload directory at: ${uploadDir}`);
+  }
+} catch (err) {
+  console.warn(`Warning: Could not create upload directory at ${uploadDir}:`, err.message);
 }
 
 // Rate limiting

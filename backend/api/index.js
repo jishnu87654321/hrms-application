@@ -29,6 +29,7 @@ module.exports = (req, res) => {
     return res.status(500).json({ 
       error: 'Backend Initialization Error', 
       message: err.message,
+      path: err.path || 'unknown',
       stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
   }
