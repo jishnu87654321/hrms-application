@@ -1,33 +1,42 @@
-console.log('Prisma Utils: Initializing...');
 const { PrismaClient } = require('@prisma/client');
 const { PrismaPg } = require('@prisma/adapter-pg');
 const { Pool } = require('pg');
-const fs = require('fs');
-const path = require('path');
 
-// SSL Certificate for RDS
-let ca;
-const certPath = path.resolve(__dirname, '../../certs/global-bundle.pem');
-console.log('Prisma Utils: Checking for cert at', certPath);
-
-if (fs.existsSync(certPath)) {
-  try {
-    ca = fs.readFileSync(certPath).toString();
-    console.log('SSL certificate loaded successfully');
-  } catch (err) {
-    console.error('Failed to read SSL certificate:', err.message);
+/**
+ * Singleton pattern for PrismaClient to prevent multiple instances
+ * and connection pool leaks in serverless / Vercel environments.
+ */
+if (!global.prismaInstance) {
+  const dbUrl = process.env.DATABASE_URL;
+  if (dbUrl) {
+    const obscuredUrl = dbUrl.replace(/\/\/.*@/, '//****:****@');
+    console.log(`[Database] Initializing with URL: ${obscuredUrl}`);
+  } else {
+    console.error('[Database] CRITICAL: DATABASE_URL is missing!');
   }
+
+  const pool = new Pool({
+    connectionString: dbUrl,
+    ssl: { rejectUnauthorized: false }, // Required for AWS RDS
+    connectionTimeoutMillis: 15000,
+    idleTimeoutMillis: 10000,
+    max: 10 // Limit pool size for serverless
+  });
+
+  pool.on('error', (err) => {
+    console.error('[Database] Unexpected pool error:', err.message);
+  });
+
+  const adapter = new PrismaPg(pool);
+  global.prismaInstance = new PrismaClient({ 
+    adapter,
+    log: ['error', 'warn']
+  });
+
+  // Warm up connection
+  global.prismaInstance.$connect()
+    .then(() => console.log('[Database] Connected successfully'))
+    .catch((err) => console.error('[Database] Connection failed:', err.message));
 }
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: ca ? { ca, rejectUnauthorized: false } : { rejectUnauthorized: false },
-  connectionTimeoutMillis: 30000,
-  idleTimeoutMillis: 10000
-});
-
-console.log('Prisma Utils: Creating Prisma client with driver adapter...');
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter, log: ['error', 'warn'] });
-
-module.exports = prisma;
+module.exports = global.prismaInstance;
