@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import * as XLSX from 'xlsx';
 import { 
   Plus, 
   Search, 
@@ -18,6 +19,40 @@ const EmployeeList: React.FC = () => {
   const [meta, setMeta] = useState<any>({ total: 0, page: 1, limit: 10, totalPages: 1 });
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const response = await employeeService.getAll({
+        ...filters,
+        page: 1,
+        limit: 100000 // Get all records matching current filter
+      });
+      const allEmployees = response.data.employees;
+
+      const exportData = allEmployees.map((emp: any) => ({
+        'Employee ID': emp.employeeCode,
+        'Full Name': emp.fullName,
+        'Role': emp.role,
+        'Department': emp.team ? emp.team.replace(/_/g, ' ') : 'Unassigned',
+        'Email': emp.email || '—',
+        'Phone': emp.phoneNumber || '—',
+        'Employment Type': emp.employmentType === 'FULL_TIME' ? 'Full-Time' : 'Intern',
+        'Date of Joining': emp.dateOfJoining ? new Date(emp.dateOfJoining).toLocaleDateString() : '—'
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Employees');
+      XLSX.writeFile(workbook, `HRMS_Employee_Export_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    } catch (err) {
+      console.error('Export failed:', err);
+      alert('Failed to export employee records.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // Filters
   const [filters, setFilters] = useState({
@@ -80,9 +115,17 @@ const EmployeeList: React.FC = () => {
             <Plus className="w-4 h-4" />
             <span>Add New</span>
           </Link>
-          <button className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl font-bold transition-all flex items-center gap-2">
-            <Download className="w-4 h-4" />
-            <span>Export</span>
+          <button 
+            onClick={handleExport}
+            disabled={isExporting}
+            className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl font-bold transition-all flex items-center gap-2 disabled:opacity-50"
+          >
+            {isExporting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            <span>{isExporting ? 'Exporting...' : 'Export'}</span>
           </button>
         </div>
       </div>

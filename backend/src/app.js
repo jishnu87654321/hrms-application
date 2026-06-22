@@ -22,6 +22,20 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
+// Request Debugging Logger
+app.use((req, res, next) => {
+  res.on('finish', () => {
+    try {
+      const logFile = path.join(__dirname, '../request_debug.log');
+      const logLine = `[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - Status: ${res.statusCode} - Auth: ${req.headers.authorization || 'none'}\n`;
+      fs.appendFileSync(logFile, logLine);
+    } catch (e) {
+      // ignore log write errors
+    }
+  });
+  next();
+});
+
 app.use(helmet({
   crossOriginResourcePolicy: false, // Required if serving assets cross-origin
 }));
