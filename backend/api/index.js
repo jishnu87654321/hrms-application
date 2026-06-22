@@ -1,3 +1,4 @@
+// Trigger Vercel build after Git connection configuration
 const allowedOrigins = [
   "https://hrms-integrated.vercel.app",
   "https://hrms-frontend-prod-eosin.vercel.app",
